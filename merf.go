@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/christopherm99/merf/client"
-	"github.com/christopherm99/merf/server"
+	"github.com/ais-ucla/merf/client"
+	"github.com/ais-ucla/merf/server"
 	"os"
 )
 
