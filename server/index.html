@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Molten Perforator</title>
+<style>
+body {
+  background-color: black;
+  color: white;
+  font-family:'Lucida Console', monospace;
+  display: flex;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+}
+
+main {
+  width: 50vw;
+  height: 50vh;
+  border: dashed white;
+  margin: auto;
+  padding: 4em;
+}
+
+a { color: white; text-decoration: none; font-weight: bold; }
+
+li { margin: 1em 0; }
+</style>
+</head>
+<body>
+<main>
+<h1>Molten Perforator</h1>
+<p>Powered by <a href="//ais-ucla.org">AI Safety at UCLA</a>.</p>
+<hr />
+<br />
+<p>Sites Online</p>
+<ul>
+{{ range $client, $_ := . }}<li>{{ $client }}</li>{{ end }}
+</ul>
+</main>
+</body>
+</html>

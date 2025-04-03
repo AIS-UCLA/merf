@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"html/template"
 	"log"
 	"math/rand"
 	"net"
@@ -55,6 +56,7 @@ var (
 		"finland", "galicia", "gascony", "livonia", "picardy",
 		"piedmont", "prussia", "ruhr", "silesia", "syria",
 		"tuscany", "tyrolia", "ukraine", "wales", "yorkshire"}
+	status_tmpl = template.Must(template.ParseFiles("server/index.html"))
 )
 
 func usage() {
@@ -105,7 +107,6 @@ func (m *MerfServer) RegisterClient(conn net.Conn) string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// TODO: ensure no collisions
 	subdomain := fmt.Sprintf("%s-%s-%s-%s", iupac[rand.Intn(len(iupac))],
 		nato[rand.Intn(len(nato))],
 		stars[rand.Intn(len(stars))],
@@ -122,7 +123,10 @@ func (m *MerfServer) HandleClient(conn net.Conn) {
 
 func (m *MerfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Host == *domain {
-		// TODO: status page
+		err := status_tmpl.Execute(w, m.clients)
+		if err != nil {
+			log.Printf("ERR: failed to parse status page: %v", err)
+		}
 		return
 	}
 
@@ -132,9 +136,9 @@ func (m *MerfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.mu.Lock()
 	for {
 		if c, exists := m.clients[hostname]; exists {
-			// TODO: check if conn is valid?
 			mc = c
 			found = true
+			break
 		}
 
 		if dot := strings.Index(hostname, "."); dot != -1 {
@@ -146,7 +150,7 @@ func (m *MerfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.mu.Unlock()
 
 	if !found {
-		http.Error(w, "Bad Gateway", http.StatusBadGateway)
+		http.Error(w, "Not Found", http.StatusNotFound)
 		return
 	}
 
@@ -156,13 +160,20 @@ func (m *MerfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			pr.Out.URL.Host = r.Host
 		},
 		Transport: mc,
+		ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+			m.mu.Lock()
+			delete(m.clients, hostname)
+			m.mu.Unlock()
+			mc.conn.Close()
+			http.Error(w, "Bad Gateway", http.StatusBadGateway)
+			log.Printf("LOG: failed connection to client for subdomain '%s': %v", hostname, err)
+		},
 	}
 
 	proxy.ServeHTTP(w, r)
 }
 
 func Main() {
-
 	flags.Usage = usage
 	flags.Parse(os.Args[2:])
 
