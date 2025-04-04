@@ -20,6 +20,7 @@ var (
 	httpPort = flags.Int("http_port", 8000, "address to server http on")
 	merfPort = flags.Int("merf_port", 1337, "address to listen for clients on")
 	domain   = flags.String("domain", "example.com", "base domain to serve on")
+	status   = flags.String("template", "server/index.html", "path to status page template file")
 
 	iupac = []string{"mono", "di", "tri", "tetra", "penta", "hexa", "hepta",
 		"octa", "nona", "deca", "undeca", "dodeca", "trideca",
@@ -56,7 +57,7 @@ var (
 		"finland", "galicia", "gascony", "livonia", "picardy",
 		"piedmont", "prussia", "ruhr", "silesia", "syria",
 		"tuscany", "tyrolia", "ukraine", "wales", "yorkshire"}
-	status_tmpl = template.Must(template.ParseFiles("server/index.html"))
+	status_tmpl = template.Must(template.ParseFiles(*status))
 )
 
 func usage() {
