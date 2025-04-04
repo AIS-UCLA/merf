@@ -57,8 +57,9 @@ var (
 		"finland", "galicia", "gascony", "livonia", "picardy",
 		"piedmont", "prussia", "ruhr", "silesia", "syria",
 		"tuscany", "tyrolia", "ukraine", "wales", "yorkshire"}
-	status_tmpl = template.Must(template.ParseFiles(*status))
 )
+
+var status_tmpl *template.Template
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage: merf server [options]\n")
@@ -177,6 +178,12 @@ func (m *MerfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func Main() {
 	flags.Usage = usage
 	flags.Parse(os.Args[2:])
+
+	var err error
+	status_tmpl, err = template.ParseFiles(*status)
+	if err != nil {
+		log.Fatalf("ERR: failed to open status template: %v", err)
+	}
 
 	log.Printf("staring http server on :%d, listening for clients on :%d\n", *httpPort, *merfPort)
 
