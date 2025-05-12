@@ -69,13 +69,17 @@ func usage() {
 
 type MerfConn struct {
 	conn net.Conn
+	mu   sync.Mutex
 }
 
-func NewMerfConn(c net.Conn) MerfConn {
-	return MerfConn{conn: c}
+func NewMerfConn(c net.Conn) *MerfConn {
+	return &MerfConn{conn: c}
 }
 
-func (mc MerfConn) RoundTrip(req *http.Request) (*http.Response, error) {
+func (mc *MerfConn) RoundTrip(req *http.Request) (*http.Response, error) {
+	mc.mu.Lock()
+	defer mc.mu.Unlock()
+
 	if err := req.Write(mc.conn); err != nil {
 		return nil, err
 	}
@@ -86,14 +90,14 @@ func (mc MerfConn) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 type MerfServer struct {
-	clients map[string]MerfConn
+	clients map[string]*MerfConn
 	mu      sync.RWMutex
 	domain  string
 }
 
 func NewMerfServer(domain string) *MerfServer {
 	return &MerfServer{
-		clients: make(map[string]MerfConn),
+		clients: make(map[string]*MerfConn),
 		domain:  domain,
 	}
 }
@@ -125,7 +129,7 @@ func (m *MerfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var mc MerfConn
+	var mc *MerfConn
 	found := false
 	hostname := r.Host
 	m.mu.Lock()
