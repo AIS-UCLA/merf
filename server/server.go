@@ -69,27 +69,20 @@ func usage() {
 
 type MerfConn struct {
 	conn net.Conn
-	bufr *bufio.Reader
 }
 
 func NewMerfConn(c net.Conn) MerfConn {
-	return MerfConn{
-		conn: c,
-		bufr: bufio.NewReader(c),
-	}
+	return MerfConn{conn: c}
 }
 
 func (mc MerfConn) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err := req.Write(mc.conn); err != nil {
 		return nil, err
 	}
-
-	resp, err := http.ReadResponse(mc.bufr, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
+	// FIXME: do not hardcode buffer size.
+	// This is a fundamental flaw in go's HTTP/1.x parser
+	// so fixing this requires switching to HTTP/2, which we should do anyway.
+	return http.ReadResponse(bufio.NewReaderSize(mc.conn, 64*1024), req)
 }
 
 type MerfServer struct {
